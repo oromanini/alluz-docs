@@ -13,6 +13,9 @@
         <div class="logo-label">Alluz Tech</div>
         <div class="logo-name">Acordo de Não Divulgação</div>
       </div>
+      <a href="/admin/login" class="btn-admin-login">
+        <i data-lucide="lock"></i> Admin
+      </a>
     </div>
 
     <div class="container">
@@ -68,11 +71,11 @@
           <div class="radio-group">
             <label class="radio-card selected">
               <input type="radio" name="tipoPessoa" value="PJ" checked>
-              🏢 Pessoa Jurídica
+              <i data-lucide="building-2"></i> Pessoa Jurídica
             </label>
             <label class="radio-card">
               <input type="radio" name="tipoPessoa" value="PF">
-              👤 Pessoa Física
+              <i data-lucide="user"></i> Pessoa Física
             </label>
           </div>
 
@@ -100,11 +103,6 @@
               <div class="field-error"></div>
             </div>
             <div class="form-group">
-              <label for="cep">CEP <span class="required">*</span></label>
-              <input type="text" id="cep" placeholder="00000-000" maxlength="9">
-              <div class="field-error"></div>
-            </div>
-            <div class="form-group">
               <label for="endereco_pj">Endereço completo <span class="required">*</span></label>
               <input type="text" id="endereco_pj" placeholder="Rua, número, bairro, cidade – UF">
               <div class="field-error"></div>
@@ -128,6 +126,13 @@
               <input type="text" id="endereco_pf" placeholder="Rua, número, bairro, cidade – UF">
               <div class="field-error"></div>
             </div>
+          </div>
+
+          <!-- CEP — comum a PJ e PF -->
+          <div class="form-group">
+            <label for="cep">CEP <span class="required">*</span></label>
+            <input type="text" id="cep" placeholder="00000-000" maxlength="9">
+            <div class="field-error"></div>
           </div>
 
           <div class="btn-group">
@@ -183,6 +188,13 @@
               <div class="field-error"></div>
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="test1_email">E-mail <span class="required">*</span></label>
+              <input type="email" id="test1_email" placeholder="testemunha1@email.com">
+              <div class="field-error"></div>
+            </div>
+          </div>
 
           <div class="section-label">Testemunha 2</div>
           <div class="form-row">
@@ -194,6 +206,13 @@
             <div class="form-group">
               <label for="test2_cpf">CPF <span class="required">*</span></label>
               <input type="text" id="test2_cpf" placeholder="000.000.000-00" maxlength="14">
+              <div class="field-error"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="test2_email">E-mail <span class="required">*</span></label>
+              <input type="email" id="test2_email" placeholder="testemunha2@email.com">
               <div class="field-error"></div>
             </div>
           </div>
@@ -259,7 +278,7 @@
 
           <div class="btn-group">
             <button class="btn btn-secondary" data-prev>← Anterior</button>
-            <button class="btn btn-accent" id="btnSubmit">✉️ Gerar e enviar NDA</button>
+            <button class="btn btn-accent" id="btnSubmit"><i data-lucide="send"></i> Gerar e enviar NDA</button>
           </div>
         </div>
 
@@ -267,11 +286,11 @@
 
       <!-- Success screen -->
       <div class="card result-screen success-screen" id="successScreen">
-        <div class="result-icon">✅</div>
+        <div class="result-icon"><i data-lucide="check-circle"></i></div>
         <h2>NDA enviado com sucesso!</h2>
         <p>Seu NDA foi enviado para <strong id="emailDisplay"></strong>. Verifique sua caixa de entrada (e a pasta de spam).</p>
         <br>
-        <p style="font-size:13px;">Em caso de dúvidas, entre em contato pelo e-mail <strong>agentes@alluzenergia.com.br</strong>.</p>
+        <p style="font-size:13px;">Em caso de dúvidas, entre em contato pelo e-mail <strong>nda@alluz.tech</strong>.</p>
       </div>
 
     </div><!-- /container -->
@@ -292,6 +311,8 @@
       });
     });
   </script>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

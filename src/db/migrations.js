@@ -29,6 +29,24 @@ async function runMigrations() {
       )
     `);
 
+    // Colunas adicionadas após criação inicial da tabela
+    const [existingCols] = await conn.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'clientes'`
+    );
+    const colNames = existingCols.map(r => r.COLUMN_NAME);
+
+    const newCols = [
+      ['testemunha1_email',       'VARCHAR(255) NULL'],
+      ['testemunha2_email',       'VARCHAR(255) NULL'],
+      ['docuseal_submission_id',  'VARCHAR(255) NULL'],
+    ];
+    for (const [name, def] of newCols) {
+      if (!colNames.includes(name)) {
+        await conn.query(`ALTER TABLE clientes ADD COLUMN ${name} ${def}`);
+      }
+    }
+
     await conn.query(`
       CREATE TABLE IF NOT EXISTS admin_users (
         id            INT AUTO_INCREMENT PRIMARY KEY,
