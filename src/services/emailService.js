@@ -51,4 +51,50 @@ async function enviarNDA(dados, pdfBuffer) {
   });
 }
 
-module.exports = { enviarNDA };
+const emailAssinaturaPath = path.join(__dirname, '../../templates/email_assinatura.html');
+
+async function enviarLinkAssinatura(nome, email, linkAssinatura, nomeCliente, papel) {
+  const transporter = criarTransporte();
+
+  const introsPorPapel = {
+    cliente:      `O seu Acordo de Não Divulgação (NDA) com a <strong>Alluz Tech</strong> foi gerado e está pronto para assinatura digital.`,
+    alluz:        `Um novo Acordo de Não Divulgação (NDA) com <strong>${nomeCliente}</strong> foi gerado e aguarda a sua assinatura.`,
+    testemunha:   `Você foi indicado(a) como testemunha no Acordo de Não Divulgação (NDA) entre <strong>${nomeCliente}</strong> e a <strong>Alluz Tech</strong>.`,
+  };
+
+  const intro = introsPorPapel[papel] || introsPorPapel.cliente;
+
+  let html = fs.readFileSync(emailAssinaturaPath, 'utf-8');
+  html = html.split('{{NOME_SIGNATARIO}}').join(nome);
+  html = html.split('{{MENSAGEM_INTRO}}').join(intro);
+  html = html.split('{{LINK_ASSINATURA}}').join(linkAssinatura);
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Assinatura de NDA — Alluz Tech',
+    html,
+  });
+}
+
+// Notificação interna: envia o PDF apenas para a equipe (sem copiar o cliente)
+async function notificarInterno(dados, pdfBuffer) {
+  const transporter = criarTransporte();
+  const nomeArquivo = `NDA_${slugify(dados.razao_social)}.pdf`;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to: process.env.EMAIL_CC,
+    subject: `[Interno] NDA gerado — ${dados.razao_social}`,
+    text: `NDA enviado para assinatura via DocuSeal.\nCliente: ${dados.razao_social}\nE-mail: ${dados.email}`,
+    attachments: [
+      {
+        filename: nomeArquivo,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ],
+  });
+}
+
+module.exports = { enviarNDA, notificarInterno, enviarLinkAssinatura };

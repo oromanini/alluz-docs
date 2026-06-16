@@ -44,8 +44,9 @@ jobs:
             SMTP_SECURE=true
             SMTP_USER=${{ secrets.SMTP_USER }}
             SMTP_PASS=${{ secrets.SMTP_PASS }}
-            EMAIL_CC=agentes@alluzenergia.com.br
-            EMAIL_FROM="Alluz Tech <nda@alluzenergia.com.br>"
+            EMAIL_CC=nda@alluz.tech
+            EMAIL_FROM="Alluz Tech <nda@alluz.tech>"
+            DOCUSEAL_API_KEY=${{ secrets.DOCUSEAL_API_KEY }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRES_IN=8h
             ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}

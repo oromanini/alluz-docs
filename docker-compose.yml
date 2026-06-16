@@ -34,14 +34,15 @@ services:
       SMTP_SECURE: ${SMTP_SECURE:-true}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      EMAIL_CC: ${EMAIL_CC:-agentes@alluzenergia.com.br}
-      EMAIL_FROM: ${EMAIL_FROM:-Alluz Tech <nda@alluzenergia.com.br>}
+      EMAIL_CC: ${EMAIL_CC:-nda@alluz.tech}
+      EMAIL_FROM: ${EMAIL_FROM:-Alluz Tech <nda@alluz.tech>}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
       PORT: 3000
       NODE_ENV: ${NODE_ENV:-production}
+      DOCUSEAL_API_KEY: ${DOCUSEAL_API_KEY}
     depends_on:
       db:
         condition: service_healthy

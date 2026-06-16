@@ -122,10 +122,17 @@ function updateProgress() {
 }
 
 // ── Navigate ───────────────────────────────────────────────────────────────
+function applyTipoPessoa() {
+  const isPJ = state.tipoPessoa === 'PJ';
+  document.getElementById('fields-pj').style.display = isPJ ? '' : 'none';
+  document.getElementById('fields-pf').style.display = isPJ ? 'none' : '';
+}
+
 function goTo(n) {
   steps[state.currentStep].classList.remove('active');
   state.currentStep = n;
   steps[state.currentStep].classList.add('active');
+  if (n === 2) applyTipoPessoa();
   updateProgress();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -210,6 +217,7 @@ function validateCurrentStep() {
       break;
     }
     case 4: {
+      const emailRe4 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       ['test1_nome','test2_nome'].forEach(id => {
         if (!document.getElementById(id).value.trim()) {
           showError(id, 'Campo obrigatório.'); ok = false;
@@ -218,6 +226,11 @@ function validateCurrentStep() {
       ['test1_cpf','test2_cpf'].forEach(id => {
         if (!validarCPF(document.getElementById(id).value)) {
           showError(id, 'CPF inválido.'); ok = false;
+        }
+      });
+      ['test1_email','test2_email'].forEach(id => {
+        if (!emailRe4.test(document.getElementById(id).value)) {
+          showError(id, 'E-mail inválido.'); ok = false;
         }
       });
       break;
@@ -265,8 +278,10 @@ function collectCurrentStep() {
     case 4:
       state.dados.testemunha1_nome = document.getElementById('test1_nome').value.trim();
       state.dados.testemunha1_cpf = document.getElementById('test1_cpf').value;
+      state.dados.testemunha1_email = document.getElementById('test1_email').value.trim();
       state.dados.testemunha2_nome = document.getElementById('test2_nome').value.trim();
       state.dados.testemunha2_cpf = document.getElementById('test2_cpf').value;
+      state.dados.testemunha2_email = document.getElementById('test2_email').value.trim();
       break;
     case 5:
       state.dados.email = document.getElementById('email').value.trim();
@@ -305,7 +320,9 @@ function buildReview() {
 
   document.getElementById('review-testemunhas').innerHTML = `
     ${rv('Testemunha 1', d.testemunha1_nome + ' — ' + d.testemunha1_cpf)}
+    ${rv('E-mail Test. 1', d.testemunha1_email)}
     ${rv('Testemunha 2', d.testemunha2_nome + ' — ' + d.testemunha2_cpf)}
+    ${rv('E-mail Test. 2', d.testemunha2_email)}
   `;
 
   document.getElementById('review-email').innerHTML = rv('E-mail', d.email);
@@ -333,6 +350,7 @@ document.getElementById('btnSubmit').addEventListener('click', async () => {
       document.querySelector('.progress-wrap').style.display = 'none';
       document.getElementById('emailDisplay').textContent = state.dados.email;
       document.getElementById('successScreen').classList.add('visible');
+      lucide.createIcons();
     } else {
       throw new Error(data.error || 'Erro desconhecido.');
     }
@@ -363,3 +381,4 @@ document.getElementById('editEmail').addEventListener('click', () => goTo(5));
 
 // ── Init ───────────────────────────────────────────────────────────────────
 updateProgress();
+lucide.createIcons();
