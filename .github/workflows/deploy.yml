@@ -1,0 +1,56 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci --omit=dev
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Deploy via SSH to GCP VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.GCP_VM_HOST }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/nda-form
+            git pull origin main
+            npm ci --omit=dev
+            cat > .env << 'ENVEOF'
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            SMTP_HOST=smtp.hostinger.com
+            SMTP_PORT=465
+            SMTP_SECURE=true
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            EMAIL_CC=agentes@alluzenergia.com.br
+            EMAIL_FROM="Alluz Tech <nda@alluzenergia.com.br>"
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=8h
+            ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }}
+            ADMIN_PASSWORD_HASH=${{ secrets.ADMIN_PASSWORD_HASH }}
+            PORT=3000
+            NODE_ENV=production
+            ENVEOF
+            pm2 restart nda-form || pm2 start server.js --name nda-form

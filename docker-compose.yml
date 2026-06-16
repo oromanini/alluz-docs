@@ -1,0 +1,56 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-nda_form}
+      MYSQL_USER: ${DB_USER:-nda_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nda_pass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - nda_net
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-nda_user}
+      DB_PASSWORD: ${DB_PASSWORD:-nda_pass}
+      DB_NAME: ${DB_NAME:-nda_form}
+      SMTP_HOST: ${SMTP_HOST:-smtp.hostinger.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-true}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      EMAIL_CC: ${EMAIL_CC:-agentes@alluzenergia.com.br}
+      EMAIL_FROM: ${EMAIL_FROM:-Alluz Tech <nda@alluzenergia.com.br>}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - nda_net
+
+volumes:
+  mysql_data:
+
+networks:
+  nda_net:
+    driver: bridge
