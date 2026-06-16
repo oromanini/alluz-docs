@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NDA — Alluz Tech</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="top-bar">
+      <div>
+        <div class="logo-label">Alluz Tech</div>
+        <div class="logo-name">Acordo de Não Divulgação</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Progress -->
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span id="progressLabel">Etapa 1 de 7</span>
+          <span></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="step-dots">
+          <div class="step-dot active" title="Privacidade">1</div>
+          <div class="step-dot" title="Tipo">2</div>
+          <div class="step-dot" title="Dados">3</div>
+          <div class="step-dot" title="Representante">4</div>
+          <div class="step-dot" title="Testemunhas">5</div>
+          <div class="step-dot" title="E-mail">6</div>
+          <div class="step-dot" title="Revisão">7</div>
+        </div>
+      </div>
+
+      <!-- Form card -->
+      <div class="card" id="formCard">
+
+        <!-- ── Step 0: Privacidade ── -->
+        <div class="step active" id="step-0">
+          <div class="step-title">Antes de começar</div>
+          <h2 class="step-heading">Termo de Privacidade</h2>
+
+          <div class="privacy-box">
+            <p><strong>Termo de Consentimento e Privacidade</strong></p>
+            <p>Ao prosseguir, você autoriza a Alluz Energia Sustentável e Tecnologia da Informação Ltda ("Alluz Tech") a coletar e armazenar os dados informados neste formulário com a finalidade exclusiva de formalizar o Acordo de Não Divulgação (NDA) e, futuramente, elaborar instrumentos contratuais relacionados.</p>
+            <p>Os dados serão tratados em conformidade com a Lei nº 13.709/2018 (LGPD). Para exercer seus direitos de acesso, correção ou exclusão, entre em contato pelo e-mail <strong>dpo@alluz.tech</strong>.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="privacyAccept">
+              Li e aceito os termos de privacidade
+            </label>
+          </div>
+
+          <div class="btn-group" style="justify-content:flex-end;">
+            <button class="btn btn-primary" id="btnStart" data-next disabled>Começar →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 1: Tipo de pessoa ── -->
+        <div class="step" id="step-1">
+          <div class="step-title">Etapa 1</div>
+          <h2 class="step-heading">Tipo de pessoa</h2>
+
+          <div class="radio-group">
+            <label class="radio-card selected">
+              <input type="radio" name="tipoPessoa" value="PJ" checked>
+              🏢 Pessoa Jurídica
+            </label>
+            <label class="radio-card">
+              <input type="radio" name="tipoPessoa" value="PF">
+              👤 Pessoa Física
+            </label>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-primary" data-next>Próximo →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 2: Dados da empresa / pessoa ── -->
+        <div class="step" id="step-2">
+          <div class="step-title">Etapa 2</div>
+          <h2 class="step-heading">Dados da empresa / pessoa</h2>
+
+          <!-- PJ -->
+          <div id="fields-pj">
+            <div class="form-group">
+              <label for="razao_social">Razão Social <span class="required">*</span></label>
+              <input type="text" id="razao_social" placeholder="Ex.: Empresa LTDA">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="cnpj">CNPJ <span class="required">*</span></label>
+              <input type="text" id="cnpj" placeholder="00.000.000/0000-00" maxlength="18">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="cep">CEP <span class="required">*</span></label>
+              <input type="text" id="cep" placeholder="00000-000" maxlength="9">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="endereco_pj">Endereço completo <span class="required">*</span></label>
+              <input type="text" id="endereco_pj" placeholder="Rua, número, bairro, cidade – UF">
+              <div class="field-error"></div>
+            </div>
+          </div>
+
+          <!-- PF -->
+          <div id="fields-pf" style="display:none;">
+            <div class="form-group">
+              <label for="nome_pf">Nome completo <span class="required">*</span></label>
+              <input type="text" id="nome_pf" placeholder="Seu nome completo">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="cpf_pf">CPF <span class="required">*</span></label>
+              <input type="text" id="cpf_pf" placeholder="000.000.000-00" maxlength="14">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="endereco_pf">Endereço completo <span class="required">*</span></label>
+              <input type="text" id="endereco_pf" placeholder="Rua, número, bairro, cidade – UF">
+              <div class="field-error"></div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-primary" data-next>Próximo →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 3: Representante legal (PJ only) ── -->
+        <div class="step" id="step-3">
+          <div class="step-title">Etapa 3</div>
+          <h2 class="step-heading">Representante legal</h2>
+
+          <div class="form-group">
+            <label for="representante">Nome completo do representante <span class="required">*</span></label>
+            <input type="text" id="representante" placeholder="Nome do representante legal">
+            <div class="field-error"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cpf_representante">CPF do representante <span class="required">*</span></label>
+              <input type="text" id="cpf_representante" placeholder="000.000.000-00" maxlength="14">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="cargo">Cargo <span class="required">*</span></label>
+              <input type="text" id="cargo" placeholder="Ex.: Sócio-Administrador">
+              <div class="field-error"></div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-primary" data-next>Próximo →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 4: Testemunhas ── -->
+        <div class="step" id="step-4">
+          <div class="step-title">Etapa 4</div>
+          <h2 class="step-heading">Testemunhas</h2>
+
+          <div class="section-label">Testemunha 1</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="test1_nome">Nome completo <span class="required">*</span></label>
+              <input type="text" id="test1_nome" placeholder="Nome da testemunha">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="test1_cpf">CPF <span class="required">*</span></label>
+              <input type="text" id="test1_cpf" placeholder="000.000.000-00" maxlength="14">
+              <div class="field-error"></div>
+            </div>
+          </div>
+
+          <div class="section-label">Testemunha 2</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="test2_nome">Nome completo <span class="required">*</span></label>
+              <input type="text" id="test2_nome" placeholder="Nome da testemunha">
+              <div class="field-error"></div>
+            </div>
+            <div class="form-group">
+              <label for="test2_cpf">CPF <span class="required">*</span></label>
+              <input type="text" id="test2_cpf" placeholder="000.000.000-00" maxlength="14">
+              <div class="field-error"></div>
+            </div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-primary" data-next>Próximo →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 5: E-mail ── -->
+        <div class="step" id="step-5">
+          <div class="step-title">Etapa 5</div>
+          <h2 class="step-heading">E-mail para recebimento do NDA</h2>
+
+          <div class="form-group">
+            <label for="email">E-mail <span class="required">*</span></label>
+            <input type="email" id="email" placeholder="seu@email.com">
+            <div class="field-error"></div>
+          </div>
+          <div class="form-group">
+            <label for="email_confirm">Confirmar e-mail <span class="required">*</span></label>
+            <input type="email" id="email_confirm" placeholder="seu@email.com">
+            <div class="field-error"></div>
+          </div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-primary" data-next>Revisar →</button>
+          </div>
+        </div>
+
+        <!-- ── Step 6: Revisão ── -->
+        <div class="step" id="step-6">
+          <div class="step-title">Etapa 6</div>
+          <h2 class="step-heading">Revisão e confirmação</h2>
+
+          <div class="review-section">
+            <div class="review-section-title">Dados da empresa / pessoa</div>
+            <button class="btn-edit" id="editEmpresa">Editar</button>
+            <div id="review-empresa"></div>
+          </div>
+
+          <div class="review-section" id="review-section-representante">
+            <div class="review-section-title">Representante legal</div>
+            <button class="btn-edit" id="editRepresentante">Editar</button>
+            <div id="review-representante"></div>
+          </div>
+
+          <div class="review-section">
+            <div class="review-section-title">Testemunhas</div>
+            <button class="btn-edit" id="editTestemunhas">Editar</button>
+            <div id="review-testemunhas"></div>
+          </div>
+
+          <div class="review-section">
+            <div class="review-section-title">E-mail</div>
+            <button class="btn-edit" id="editEmail">Editar</button>
+            <div id="review-email"></div>
+          </div>
+
+          <div class="inline-error" id="inlineError"></div>
+
+          <div class="btn-group">
+            <button class="btn btn-secondary" data-prev>← Anterior</button>
+            <button class="btn btn-accent" id="btnSubmit">✉️ Gerar e enviar NDA</button>
+          </div>
+        </div>
+
+      </div><!-- /formCard -->
+
+      <!-- Success screen -->
+      <div class="card result-screen success-screen" id="successScreen">
+        <div class="result-icon">✅</div>
+        <h2>NDA enviado com sucesso!</h2>
+        <p>Seu NDA foi enviado para <strong id="emailDisplay"></strong>. Verifique sua caixa de entrada (e a pasta de spam).</p>
+        <br>
+        <p style="font-size:13px;">Em caso de dúvidas, entre em contato pelo e-mail <strong>agentes@alluzenergia.com.br</strong>.</p>
+      </div>
+
+    </div><!-- /container -->
+  </div>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Gerando seu NDA...</div>
+  </div>
+
+  <script>
+    document.querySelectorAll('input[name="tipoPessoa"]').forEach(radio => {
+      radio.addEventListener('change', () => {
+        const isPJ = radio.value === 'PJ';
+        document.getElementById('fields-pj').style.display = isPJ ? '' : 'none';
+        document.getElementById('fields-pf').style.display = isPJ ? 'none' : '';
+      });
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

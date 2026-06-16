@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Acordo de Não Divulgação — Alluz Tech</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12pt;
+      color: #1a1a1a;
+      line-height: 1.7;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #1B4F72;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header .empresa {
+      font-size: 10pt;
+      letter-spacing: 3px;
+      color: #1B4F72;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+    .header h1 {
+      font-size: 16pt;
+      font-weight: bold;
+      color: #1a1a1a;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .header h2 {
+      font-size: 11pt;
+      font-weight: normal;
+      color: #555;
+      margin-top: 4px;
+    }
+    .partes {
+      margin-bottom: 24px;
+    }
+    .partes p {
+      margin-bottom: 16px;
+      text-align: justify;
+    }
+    .partes strong {
+      color: #1B4F72;
+    }
+    .clausula {
+      margin-bottom: 22px;
+    }
+    .clausula h3 {
+      font-size: 11pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #1B4F72;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #dde3ec;
+      padding-bottom: 4px;
+    }
+    .clausula p {
+      text-align: justify;
+      margin-bottom: 8px;
+    }
+    .clausula ul, .clausula ol {
+      margin: 8px 0 8px 24px;
+    }
+    .clausula li {
+      margin-bottom: 6px;
+      text-align: justify;
+    }
+    .item {
+      margin-bottom: 8px;
+    }
+    .assinaturas {
+      margin-top: 60px;
+      page-break-inside: avoid;
+    }
+    .assinaturas .local-data {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .assinatura-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 30px;
+    }
+    .assinatura-bloco {
+      border-top: 1px solid #333;
+      padding-top: 8px;
+    }
+    .assinatura-bloco p {
+      font-size: 10pt;
+      margin-bottom: 2px;
+    }
+    .assinatura-bloco .label {
+      font-size: 9pt;
+      color: #666;
+    }
+    .testemunhas {
+      margin-top: 40px;
+    }
+    .testemunhas h3 {
+      font-size: 10pt;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="empresa">Alluz Tech</div>
+    <h1>Acordo de Não Divulgação</h1>
+    <h2>Non-Disclosure Agreement (NDA)</h2>
+  </div>
+
+  <div class="partes">
+    <p>
+      <strong>PARTE DIVULGANTE:</strong> {{RAZAO_SOCIAL}}, {{TIPO_PESSOA}}, inscrita no {{TIPO_DOCUMENTO}} sob o nº {{NUMERO_DOCUMENTO}},
+      com endereço em {{ENDERECO}}, CEP {{CEP}}, {{BLOCO_REPRESENTANTE}}
+      doravante denominada simplesmente <strong>"PARTE DIVULGANTE"</strong>.
+    </p>
+
+    <p>
+      <strong>PARTE RECEPTORA:</strong> ALLUZ ENERGIA SUSTENTÁVEL E TECNOLOGIA DA INFORMAÇÃO LTDA, pessoa jurídica de direito privado,
+      inscrita no CNPJ sob o nº 34.782.317/0001-49, com sede na Rua Santos Dumont, nº 3.275, Sala 1004, Zona 3,
+      Maringá, Paraná, CEP 87.013-050, endereço eletrônico nda@alluz.tech, neste ato representada
+      por quem determina seu contrato social, doravante denominada simplesmente <strong>"PARTE RECEPTORA"</strong> ou <strong>"ALLUZ TECH"</strong>.
+    </p>
+
+    <p>
+      As partes acima qualificadas, em conjunto denominadas <strong>"PARTES"</strong>, têm entre si justo e acordado o presente
+      Acordo de Não Divulgação ("NDA"), que se regerá pelas cláusulas e condições seguintes:
+    </p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 1 – Do Objeto e Finalidade</h3>
+    <p class="item">1.1. O presente NDA tem por objeto estabelecer as condições de sigilo e proteção das Informações Confidenciais
+    divulgadas pela PARTE DIVULGANTE à PARTE RECEPTORA no âmbito da etapa de Receita ("R") da metodologia DRI, que compreende:</p>
+    <ul>
+      <li>a) Imersão nas operações, processos e fluxos de trabalho da PARTE DIVULGANTE;</li>
+      <li>b) Levantamento, análise e documentação das regras de negócio;</li>
+      <li>c) Identificação de gargalos operacionais, sistemas existentes e integrações necessárias;</li>
+      <li>d) Elaboração de Documento de Escopo Técnico (DET) e proposta técnica pela PARTE RECEPTORA.</li>
+    </ul>
+    <p class="item">1.2. A finalidade do acesso às Informações Confidenciais é exclusivamente a elaboração da proposta técnica e,
+    caso contratado, o desenvolvimento da solução tecnológica acordada entre as partes.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 2 – Definição de Informações Confidenciais</h3>
+    <p class="item">2.1. Para fins deste NDA, consideram-se "Informações Confidenciais" todas as informações, dados, documentos,
+    processos, estratégias, segredos de negócio, dados de clientes, fornecedores, preços, margens, fluxos de trabalho,
+    sistemas de tecnologia, código-fonte, algoritmos, metodologias, relatórios, planilhas, apresentações e quaisquer
+    outras informações divulgadas pela PARTE DIVULGANTE à PARTE RECEPTORA, seja de forma verbal, escrita, eletrônica
+    ou por qualquer outro meio, que sejam designadas como confidenciais ou que, pelas circunstâncias, devam ser
+    razoavelmente tratadas como tal.</p>
+    <p class="item">2.2. Não serão consideradas Informações Confidenciais aquelas que:</p>
+    <ul>
+      <li>a) Sejam ou se tornem de domínio público por meio lícito, sem violação deste NDA;</li>
+      <li>b) Já eram de conhecimento da PARTE RECEPTORA antes da divulgação, comprovado documentalmente;</li>
+      <li>c) Sejam recebidas de terceiros sem restrição de divulgação;</li>
+      <li>d) Sejam desenvolvidas de forma independente pela PARTE RECEPTORA, sem utilização das Informações Confidenciais;</li>
+      <li>e) Cuja divulgação seja exigida por determinação legal ou judicial, desde que a PARTE RECEPTORA notifique
+      previamente a PARTE DIVULGANTE.</li>
+    </ul>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 3 – Das Obrigações da Parte Receptora</h3>
+    <p class="item">3.1. A PARTE RECEPTORA compromete-se a:</p>
+    <ul>
+      <li>a) Manter sigilo absoluto sobre todas as Informações Confidenciais recebidas;</li>
+      <li>b) Utilizar as Informações Confidenciais exclusivamente para os fins previstos neste NDA;</li>
+      <li>c) Não reproduzir, copiar, distribuir, transmitir ou divulgar as Informações Confidenciais a terceiros
+      sem prévia autorização escrita da PARTE DIVULGANTE;</li>
+      <li>d) Restringir o acesso às Informações Confidenciais apenas aos seus colaboradores, consultores e prestadores
+      de serviço que necessitem conhecê-las para a finalidade prevista neste instrumento, os quais deverão estar
+      igualmente vinculados a obrigações de confidencialidade equivalentes;</li>
+      <li>e) Adotar medidas de segurança técnicas e organizacionais adequadas para proteger as Informações
+      Confidenciais contra acesso não autorizado, perda, destruição ou divulgação indevida;</li>
+      <li>f) Notificar imediatamente a PARTE DIVULGANTE em caso de qualquer violação, acesso não autorizado ou
+      suspeita de comprometimento das Informações Confidenciais.</li>
+    </ul>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 4 – Da Propriedade das Informações</h3>
+    <p class="item">4.1. Todas as Informações Confidenciais permanecem sendo propriedade exclusiva da PARTE DIVULGANTE.
+    Nenhuma disposição deste NDA implica transferência de propriedade intelectual, cessão de direitos ou
+    concessão de licença sobre quaisquer informações, patentes, marcas, segredos comerciais ou outros
+    direitos de propriedade intelectual da PARTE DIVULGANTE.</p>
+    <p class="item">4.2. A PARTE RECEPTORA não adquirirá qualquer direito sobre as Informações Confidenciais em
+    razão de sua divulgação ou utilização nos termos deste NDA.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 5 – Do Prazo de Vigência</h3>
+    <p class="item">5.1. O presente NDA entrará em vigor na data de sua assinatura e permanecerá vigente pelo prazo de
+    <strong>{{PRAZO_VIGENCIA}}</strong>, contados da data de assinatura.</p>
+    <p class="item">5.2. As obrigações de confidencialidade estabelecidas neste instrumento permanecerão válidas e
+    eficazes mesmo após o término do prazo de vigência ou resilição do NDA, enquanto as Informações
+    Confidenciais não se tornarem de domínio público por meios lícitos.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 6 – Da Não Solicitação de Colaboradores</h3>
+    <p class="item">6.1. Durante a vigência deste NDA e pelo prazo de <strong>{{PRAZO_NAO_SOLICITACAO}}</strong> após seu encerramento,
+    cada parte compromete-se a não recrutar, contratar, induzir ou solicitar, direta ou indiretamente,
+    qualquer colaborador, empregado, sócio, consultor ou prestador de serviços da outra parte que tenha
+    tido contato com as atividades objeto deste NDA, sem o prévio consentimento escrito da parte afetada.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 7 – Das Penalidades por Violação</h3>
+    <p class="item">7.1. Em caso de violação de qualquer obrigação prevista neste NDA, a parte infratora ficará sujeita
+    ao pagamento de multa não compensatória no valor de <strong>{{VALOR_MULTA}}</strong>, por cada infração verificada,
+    sem prejuízo da obrigação de reparar integralmente os danos e prejuízos causados à parte lesada,
+    incluindo lucros cessantes, danos emergentes e honorários advocatícios.</p>
+    <p class="item">7.2. A aplicação da multa não exclui o direito da parte lesada de buscar a cessação imediata
+    da violação e demais medidas cabíveis, inclusive em caráter liminar.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 8 – Da Devolução e Destruição de Informações</h3>
+    <p class="item">8.1. Ao término da vigência deste NDA ou mediante solicitação da PARTE DIVULGANTE, a PARTE RECEPTORA
+    deverá, no prazo de 10 (dez) dias úteis, devolver ou destruir, de forma segura e irreversível,
+    todas as Informações Confidenciais recebidas, bem como quaisquer cópias, reproduções ou extratos,
+    em qualquer suporte, salvo se a retenção for exigida por determinação legal.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 9 – Da Proteção de Dados Pessoais</h3>
+    <p class="item">9.1. As partes comprometem-se a tratar quaisquer dados pessoais eventualmente compartilhados em
+    virtude deste NDA em conformidade com a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados – LGPD)
+    e demais legislações aplicáveis sobre privacidade e proteção de dados.</p>
+    <p class="item">9.2. O tratamento de dados pessoais será realizado somente para as finalidades previstas neste
+    instrumento, adotando-se medidas técnicas e organizacionais adequadas para garantir sua segurança.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 10 – Das Disposições Gerais</h3>
+    <p class="item">10.1. Este NDA representa o acordo integral entre as partes relativamente ao seu objeto, substituindo
+    quaisquer entendimentos, negociações ou acordos anteriores, sejam verbais ou escritos.</p>
+    <p class="item">10.2. Qualquer alteração ou aditamento a este NDA somente será válido se realizado por escrito e
+    devidamente assinado por ambas as partes.</p>
+    <p class="item">10.3. A invalidade ou ineficácia de qualquer disposição deste NDA não afetará a validade das
+    demais disposições, que permanecerão em pleno vigor e efeito.</p>
+    <p class="item">10.4. A omissão ou tolerância de qualquer das partes em exigir o cumprimento das obrigações
+    previstas neste NDA não constituirá novação, renúncia ou alteração das disposições aqui estabelecidas.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 11 – Da Assinatura Eletrônica</h3>
+    {{BLOCO_PLATAFORMA}}
+    <p class="item">11.1. As partes reconhecem e aceitam a validade jurídica das assinaturas eletrônicas apostas
+    neste instrumento, nos termos da Lei nº 14.063/2020 e demais normas aplicáveis.</p>
+  </div>
+
+  <div class="clausula">
+    <h3>Cláusula 12 – Do Foro</h3>
+    <p class="item">12.1. Fica eleito o foro da Comarca de Maringá, Estado do Paraná, para dirimir quaisquer controvérsias
+    oriundas deste NDA, com renúncia expressa a qualquer outro, por mais privilegiado que seja.</p>
+  </div>
+
+  <div class="assinaturas">
+    <div class="local-data">
+      <p>Maringá, {{DATA_DIA}} de {{DATA_MES}} de {{DATA_ANO}}.</p>
+    </div>
+
+    <div class="assinatura-grid">
+      <div class="assinatura-bloco">
+        <p><strong>{{RAZAO_SOCIAL}}</strong></p>
+        <p class="label">{{TIPO_DOCUMENTO}}: {{NUMERO_DOCUMENTO}}</p>
+        <p class="label">PARTE DIVULGANTE</p>
+        <br><br>
+        <p class="label">Assinatura: _______________________________</p>
+      </div>
+      <div class="assinatura-bloco">
+        <p><strong>ALLUZ ENERGIA SUSTENTÁVEL E TECNOLOGIA DA INFORMAÇÃO LTDA</strong></p>
+        <p class="label">CNPJ: 34.782.317/0001-49</p>
+        <p class="label">PARTE RECEPTORA</p>
+        <br><br>
+        <p class="label">Assinatura: _______________________________</p>
+      </div>
+    </div>
+
+    <div class="testemunhas">
+      <h3>Testemunhas</h3>
+      <div class="assinatura-grid">
+        <div class="assinatura-bloco">
+          <p><strong>{{TESTEMUNHA1_NOME}}</strong></p>
+          <p class="label">CPF: {{TESTEMUNHA1_CPF}}</p>
+          <br>
+          <p class="label">Assinatura: _______________________________</p>
+        </div>
+        <div class="assinatura-bloco">
+          <p><strong>{{TESTEMUNHA2_NOME}}</strong></p>
+          <p class="label">CPF: {{TESTEMUNHA2_CPF}}</p>
+          <br>
+          <p class="label">Assinatura: _______________________________</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
