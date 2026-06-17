@@ -3,3 +3,7 @@ node_modules
 .git
 .github
 *.md
+setup-gcp.sh
+*.sh
+docker-compose.yml
+tests/
