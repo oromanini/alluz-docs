@@ -6,14 +6,17 @@ on:
 
 env:
   PROJECT_ID: docs-center-alluz-tech
-  REGION: southamerica-east1
-  REPO: alluz-docs
+  REGION: us-central1
   SERVICE: nda-form
-  IMAGE: southamerica-east1-docker.pkg.dev/docs-center-alluz-tech/alluz-docs/nda-form
+  IMAGE: us-central1-docker.pkg.dev/docs-center-alluz-tech/alluz-docs/nda-form
+  SA_EMAIL: github-actions@docs-center-alluz-tech.iam.gserviceaccount.com
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +24,8 @@ jobs:
       - name: Authenticate to GCP
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SA_EMAIL }}
 
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
