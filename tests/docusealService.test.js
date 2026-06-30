@@ -22,7 +22,6 @@ function mockHttpsRequest(statusCode, responseBody) {
   });
 }
 
-// Encadeia múltiplas respostas para sequências de chamadas HTTP
 function mockHttpsSequence(responses) {
   let index = 0;
   https.request.mockImplementation((opts, cb) => {
@@ -64,25 +63,22 @@ beforeEach(() => {
   process.env.DOCUSEAL_API_KEY = 'fake-key';
 });
 
-describe('criarSubmission — sem pdfBuffer (caminho legado)', () => {
-  it('retorna submissionId e signatarios a partir da resposta da API', async () => {
-    mockHttpsRequest(200, [
-      { submission_id: 'sub-1', name: 'Empresa Teste', email: 'empresa@teste.com', slug: 'abc' },
-      { submission_id: 'sub-1', name: 'Alluz Tech',    email: 'nda@alluz.tech',   slug: 'def' },
-    ]);
+describe('criarSubmission — sem pdfBuffer (fallback template estático)', () => {
+  it('usa POST /submissions com template_id fixo', async () => {
+    mockHttpsRequest(200, submissaoResposta);
 
     const result = await criarSubmission(dadosBase);
 
+    const bodyStr = https.request.mock.results[0].value.write.mock.calls[0][0];
+    const body = JSON.parse(bodyStr);
+    expect(body.template_id).toBe(4380107);
+    expect(https.request.mock.calls[0][0].path).toBe('/submissions');
     expect(result.submissionId).toBe('sub-1');
-    expect(result.signatarios).toHaveLength(2);
-    expect(result.signatarios[0].link).toBe('https://docuseal.com/s/abc');
-    expect(result.signatarios[1].email).toBe('nda@alluz.tech');
+    expect(result.signatarios).toHaveLength(4);
   });
 
-  it('envia 4 submitters para a API (divulgante, receptora, 2 testemunhas)', async () => {
-    mockHttpsRequest(200, [
-      { submission_id: 'sub-2', name: 'X', email: 'x@x.com', slug: 'x1' },
-    ]);
+  it('envia 4 submitters com os roles corretos', async () => {
+    mockHttpsRequest(200, submissaoResposta);
 
     await criarSubmission(dadosBase);
 
@@ -91,13 +87,13 @@ describe('criarSubmission — sem pdfBuffer (caminho legado)', () => {
     expect(body.submitters).toHaveLength(4);
     expect(body.submitters[0].role).toBe('DIVULGANTE');
     expect(body.submitters[1].role).toBe('RECEPTORA');
+    expect(body.submitters[2].role).toBe('TESTEMUNHA 1');
+    expect(body.submitters[3].role).toBe('TESTEMUNHA 2');
     expect(body.send_email).toBe(false);
   });
 
   it('usa representante como nome quando razao_social não existe', async () => {
-    mockHttpsRequest(200, [
-      { submission_id: 's', name: 'Rep', email: 'rep@x.com', slug: 'x' },
-    ]);
+    mockHttpsRequest(200, submissaoResposta);
 
     await criarSubmission({ ...dadosBase, razao_social: '', representante: 'Rep Legal' });
 
@@ -133,77 +129,70 @@ describe('criarSubmission — sem pdfBuffer (caminho legado)', () => {
   });
 });
 
-describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
-  // PDF mínimo válido para Chromium: contém /Type /Page para contagem de páginas
+describe('criarSubmission — com pdfBuffer (POST /submissions/pdf)', () => {
   const fakePdf = Buffer.from('%PDF-1.4\n/Type /Page\n%%EOF');
 
-  it('cria template temporário, submission e deleta o template', async () => {
+  it('usa POST /submissions/pdf com o PDF em base64', async () => {
     mockHttpsSequence([
-      { statusCode: 200, body: { fields: [] } },               // GET /templates/:id
-      { statusCode: 200, body: { id: 99999 } },                // POST /templates/pdf
-      { statusCode: 200, body: submissaoResposta },             // POST /submissions
-      { statusCode: 200, body: {} },                           // DELETE /templates/99999
+      { statusCode: 200, body: { fields: [] } },   // GET /templates/:id
+      { statusCode: 200, body: submissaoResposta }, // POST /submissions/pdf
     ]);
 
     const result = await criarSubmission(dadosBase, fakePdf);
 
+    const calls = https.request.mock.calls;
+    const submissionCall = calls.find(([opts]) => opts.path === '/submissions/pdf');
+    expect(submissionCall).toBeDefined();
+
+    const idx = calls.indexOf(submissionCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const body = JSON.parse(bodyStr);
+
+    expect(body.documents[0].file).toBe(fakePdf.toString('base64'));
+    expect(body.send_email).toBe(false);
     expect(result.submissionId).toBe('sub-1');
     expect(result.signatarios).toHaveLength(4);
-
-    // Verifica que criou a submission com o template temporário (id 99999)
-    const calls = https.request.mock.calls;
-    const submissionCall = calls.find(([opts]) => opts.method === 'POST' && opts.path === '/submissions');
-    expect(submissionCall).toBeDefined();
-    const bodyStr = https.request.mock.results[calls.indexOf(submissionCall)].value.write.mock.calls[0][0];
-    const body = JSON.parse(bodyStr);
-    expect(body.template_id).toBe(99999);
-
-    // Verifica que o template temporário foi deletado
-    const deleteCall = calls.find(([opts]) => opts.method === 'DELETE');
-    expect(deleteCall).toBeDefined();
-    expect(deleteCall[0].path).toContain('99999');
   });
 
-  it('inclui o PDF em base64 no POST /templates/pdf', async () => {
+  it('inclui os 4 submitters no payload', async () => {
     mockHttpsSequence([
       { statusCode: 200, body: { fields: [] } },
-      { statusCode: 200, body: { id: 99999 } },
       { statusCode: 200, body: submissaoResposta },
-      { statusCode: 200, body: {} },
     ]);
 
     await criarSubmission(dadosBase, fakePdf);
 
     const calls = https.request.mock.calls;
-    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
-    expect(templateCall).toBeDefined();
-    const idx = calls.indexOf(templateCall);
+    const submissionCall = calls.find(([opts]) => opts.path === '/submissions/pdf');
+    const idx = calls.indexOf(submissionCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
-    const body = JSON.parse(bodyStr);
-    expect(body.documents).toHaveLength(1);
-    expect(body.documents[0].file).toBe(fakePdf.toString('base64'));
+    const { submitters } = JSON.parse(bodyStr);
+
+    expect(submitters).toHaveLength(4);
+    expect(submitters[0].role).toBe('DIVULGANTE');
+    expect(submitters[1].role).toBe('RECEPTORA');
+    expect(submitters[2].role).toBe('TESTEMUNHA 1');
+    expect(submitters[3].role).toBe('TESTEMUNHA 2');
   });
 
   it('infere roles corretos a partir dos nomes dos campos', async () => {
     const camposTemplate = [
-      { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
-      { name: 'ASSINATURA RECEPTORA',  type: 'signature', areas: [{ x: 0.5, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
-      { name: 'ASSINATURA T1',         type: 'signature', areas: [{ x: 0.1, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
-      { name: 'ASSINATURA T2',         type: 'signature', areas: [{ x: 0.5, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
+      { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
+      { name: 'ASSINATURA RECEPTORA',  type: 'signature', areas: [{ x: 0.5, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
+      { name: 'ASSINATURA T1',         type: 'signature', areas: [{ x: 0.1, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
+      { name: 'ASSINATURA T2',         type: 'signature', areas: [{ x: 0.5, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
     ];
 
     mockHttpsSequence([
       { statusCode: 200, body: { fields: camposTemplate } },
-      { statusCode: 200, body: { id: 99999 } },
       { statusCode: 200, body: submissaoResposta },
-      { statusCode: 200, body: {} },
     ]);
 
     await criarSubmission(dadosBase, fakePdf);
 
     const calls = https.request.mock.calls;
-    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
-    const idx = calls.indexOf(templateCall);
+    const submissionCall = calls.find(([opts]) => opts.path === '/submissions/pdf');
+    const idx = calls.indexOf(submissionCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
     const { documents } = JSON.parse(bodyStr);
     const fields = documents[0].fields;
@@ -221,45 +210,38 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
 
     mockHttpsSequence([
       { statusCode: 200, body: { fields: camposTemplate } },
-      { statusCode: 200, body: { id: 99999 } },
       { statusCode: 200, body: submissaoResposta },
-      { statusCode: 200, body: {} },
     ]);
 
     await criarSubmission(dadosBase, fakePdf);
 
     const calls = https.request.mock.calls;
-    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
-    const idx = calls.indexOf(templateCall);
+    const submissionCall = calls.find(([opts]) => opts.path === '/submissions/pdf');
+    const idx = calls.indexOf(submissionCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
     const { documents } = JSON.parse(bodyStr);
-    const fields = documents[0].fields;
 
-    expect(fields[0].areas[0].attachment_uuid).toBeUndefined();
-    expect(fields[0].areas[0].x).toBe(0.1);
+    expect(documents[0].fields[0].areas[0].attachment_uuid).toBeUndefined();
+    expect(documents[0].fields[0].areas[0].x).toBe(0.1);
   });
 
   it('remapeia campos da última página do template para a última do novo PDF', async () => {
-    // Template com 3 páginas (0,1,2) — assinatura na página 2 (última)
     const camposTemplate = [
       { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
       { name: 'RUBRICA DIVULGANTE',    type: 'initials',  areas: [{ x: 0.1, y: 0.9, w: 0.1, h: 0.03, page: 0, attachment_uuid: 'u' }, { x: 0.1, y: 0.9, w: 0.1, h: 0.03, page: 1, attachment_uuid: 'u' }] },
     ];
 
     // fakePdf tem 1 ocorrência de /Type /Page → última página = índice 0
-    // A assinatura estava na página 2 (última do template) → deve ir para página 0 (última do novo PDF)
     mockHttpsSequence([
       { statusCode: 200, body: { fields: camposTemplate } },
-      { statusCode: 200, body: { id: 99999 } },
       { statusCode: 200, body: submissaoResposta },
-      { statusCode: 200, body: {} },
     ]);
 
     await criarSubmission(dadosBase, fakePdf);
 
     const calls = https.request.mock.calls;
-    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
-    const idx = calls.indexOf(templateCall);
+    const submissionCall = calls.find(([opts]) => opts.path === '/submissions/pdf');
+    const idx = calls.indexOf(submissionCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
     const { documents } = JSON.parse(bodyStr);
     const fields = documents[0].fields;
@@ -268,38 +250,16 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
     expect(assinatura.areas[0].page).toBe(0); // última página do novo PDF
 
     const rubrica = fields.find(f => f.name === 'RUBRICA DIVULGANTE');
-    expect(rubrica.areas[0].page).toBe(0); // não era última página, mantém
-    expect(rubrica.areas[1].page).toBe(1); // não era última página, mantém
+    expect(rubrica.areas[0].page).toBe(0);
+    expect(rubrica.areas[1].page).toBe(1);
   });
 
-  it('faz fallback para template base se a criação do template falhar', async () => {
-    mockHttpsSequence([
-      { statusCode: 500, body: { error: 'server error' } },    // GET /templates/:id falha
-      { statusCode: 200, body: submissaoResposta },             // POST /submissions com template base
-    ]);
-
-    const result = await criarSubmission(dadosBase, fakePdf);
-
-    expect(result.submissionId).toBe('sub-1');
-    const calls = https.request.mock.calls;
-    const submissionCall = calls.find(([opts]) => opts.method === 'POST' && opts.path === '/submissions');
-    const idx = calls.indexOf(submissionCall);
-    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
-    const body = JSON.parse(bodyStr);
-    expect(body.template_id).toBe(4380107); // template base
-  });
-
-  it('deleta o template temporário mesmo se a criação da submission falhar', async () => {
+  it('lança erro se o DocuSeal retornar 4xx no /submissions/pdf', async () => {
     mockHttpsSequence([
       { statusCode: 200, body: { fields: [] } },
-      { statusCode: 200, body: { id: 99999 } },
-      { statusCode: 500, body: { error: 'submissions failed' } }, // POST /submissions falha
-      { statusCode: 200, body: {} },                              // DELETE deve ocorrer mesmo assim
+      { statusCode: 422, body: { error: 'invalid document' } },
     ]);
 
-    await expect(criarSubmission(dadosBase, fakePdf)).rejects.toThrow('DocuSeal 500');
-
-    const deleteCall = https.request.mock.calls.find(([opts]) => opts.method === 'DELETE');
-    expect(deleteCall).toBeDefined();
+    await expect(criarSubmission(dadosBase, fakePdf)).rejects.toThrow('DocuSeal 422');
   });
 });
