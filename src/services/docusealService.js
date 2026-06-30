@@ -83,8 +83,7 @@ async function criarTemplatePDF(pdfBuffer, nomeCliente, campos) {
 
   const payload = {
     name: `NDA - ${nomeCliente} - ${Date.now()}`,
-    documents: [{ name: 'nda.pdf', file: base64 }],
-    fields,
+    documents: [{ name: 'nda.pdf', file: base64, fields }],
   };
 
   const result = await apiRequest('POST', '/templates/pdf', payload);
