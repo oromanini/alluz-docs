@@ -45,28 +45,39 @@ async function buscarCamposTemplate() {
   return template.fields || [];
 }
 
-// Conta páginas no PDF gerado pelo Chromium/Puppeteer
-function contarPaginas(pdfBuffer) {
+// Conta páginas no PDF gerado pelo Chromium/Puppeteer (0-indexed: retorna índice da última página)
+function ultimaPaginaPDF(pdfBuffer) {
   const str = pdfBuffer.toString('binary');
   const matches = str.match(/\/Type\s*\/Page[^s]/g);
-  return matches ? matches.length : 1;
+  return matches ? matches.length - 1 : 0;
+}
+
+// Infere o role do DocuSeal a partir do nome do campo (a API não retorna role nos fields)
+function inferirRole(nomeField) {
+  if (nomeField.includes('DIVULGANTE')) return 'DIVULGANTE';
+  if (nomeField.includes('RECEPTORA'))  return 'RECEPTORA';
+  if (nomeField.includes('T1'))         return 'TESTEMUNHA 1';
+  if (nomeField.includes('T2'))         return 'TESTEMUNHA 2';
+  return null;
 }
 
 // Cria um template temporário no DocuSeal a partir do PDF preenchido com os dados do cliente
 async function criarTemplatePDF(pdfBuffer, nomeCliente, campos) {
   const base64 = pdfBuffer.toString('base64');
-  const totalPages = contarPaginas(pdfBuffer);
+  const novaUltimaPagina = ultimaPaginaPDF(pdfBuffer);
 
-  // Remapeia campos do template base: ajusta page relativo se veio de template com página diferente
+  // Última página do template original (0-indexed): assinaturas ficam sempre na última página
+  const ultimaPaginaOriginal = Math.max(...campos.flatMap(f => f.areas?.map(a => a.page) ?? [0]));
+
   const fields = campos.map(f => ({
     name: f.name,
     type: f.type,
-    role: f.role,
+    role: inferirRole(f.name),
     required: f.required !== false,
-    areas: (f.areas || []).map(a => ({
+    areas: (f.areas || []).map(({ attachment_uuid, ...a }) => ({
       ...a,
-      // Se o campo original estava na última página, mantém na última página do novo PDF
-      page: a.page === totalPages ? totalPages : a.page,
+      // Se o campo estava na última página do template original, mapeia para a última do novo PDF
+      page: a.page === ultimaPaginaOriginal ? novaUltimaPagina : a.page,
     })),
   }));
 

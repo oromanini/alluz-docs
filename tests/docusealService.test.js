@@ -184,6 +184,91 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
     expect(body.documents[0].file).toBe(fakePdf.toString('base64'));
   });
 
+  it('infere roles corretos a partir dos nomes dos campos', async () => {
+    const camposTemplate = [
+      { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
+      { name: 'ASSINATURA RECEPTORA',  type: 'signature', areas: [{ x: 0.5, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
+      { name: 'ASSINATURA T1',         type: 'signature', areas: [{ x: 0.1, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
+      { name: 'ASSINATURA T2',         type: 'signature', areas: [{ x: 0.5, y: 0.4, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'uuid-1' }] },
+    ];
+
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: camposTemplate } },
+      { statusCode: 200, body: { id: 99999 } },
+      { statusCode: 200, body: submissaoResposta },
+      { statusCode: 200, body: {} },
+    ]);
+
+    await criarSubmission(dadosBase, fakePdf);
+
+    const calls = https.request.mock.calls;
+    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
+    const idx = calls.indexOf(templateCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const { fields } = JSON.parse(bodyStr);
+
+    expect(fields.find(f => f.name === 'ASSINATURA DIVULGANTE').role).toBe('DIVULGANTE');
+    expect(fields.find(f => f.name === 'ASSINATURA RECEPTORA').role).toBe('RECEPTORA');
+    expect(fields.find(f => f.name === 'ASSINATURA T1').role).toBe('TESTEMUNHA 1');
+    expect(fields.find(f => f.name === 'ASSINATURA T2').role).toBe('TESTEMUNHA 2');
+  });
+
+  it('remove attachment_uuid das areas', async () => {
+    const camposTemplate = [
+      { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 0, attachment_uuid: 'uuid-original' }] },
+    ];
+
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: camposTemplate } },
+      { statusCode: 200, body: { id: 99999 } },
+      { statusCode: 200, body: submissaoResposta },
+      { statusCode: 200, body: {} },
+    ]);
+
+    await criarSubmission(dadosBase, fakePdf);
+
+    const calls = https.request.mock.calls;
+    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
+    const idx = calls.indexOf(templateCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const { fields } = JSON.parse(bodyStr);
+
+    expect(fields[0].areas[0].attachment_uuid).toBeUndefined();
+    expect(fields[0].areas[0].x).toBe(0.1);
+  });
+
+  it('remapeia campos da última página do template para a última do novo PDF', async () => {
+    // Template com 3 páginas (0,1,2) — assinatura na página 2 (última)
+    const camposTemplate = [
+      { name: 'ASSINATURA DIVULGANTE', type: 'signature', areas: [{ x: 0.1, y: 0.2, w: 0.3, h: 0.05, page: 2, attachment_uuid: 'u' }] },
+      { name: 'RUBRICA DIVULGANTE',    type: 'initials',  areas: [{ x: 0.1, y: 0.9, w: 0.1, h: 0.03, page: 0, attachment_uuid: 'u' }, { x: 0.1, y: 0.9, w: 0.1, h: 0.03, page: 1, attachment_uuid: 'u' }] },
+    ];
+
+    // fakePdf tem 1 ocorrência de /Type /Page → última página = índice 0
+    // A assinatura estava na página 2 (última do template) → deve ir para página 0 (última do novo PDF)
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: camposTemplate } },
+      { statusCode: 200, body: { id: 99999 } },
+      { statusCode: 200, body: submissaoResposta },
+      { statusCode: 200, body: {} },
+    ]);
+
+    await criarSubmission(dadosBase, fakePdf);
+
+    const calls = https.request.mock.calls;
+    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
+    const idx = calls.indexOf(templateCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const { fields } = JSON.parse(bodyStr);
+
+    const assinatura = fields.find(f => f.name === 'ASSINATURA DIVULGANTE');
+    expect(assinatura.areas[0].page).toBe(0); // última página do novo PDF
+
+    const rubrica = fields.find(f => f.name === 'RUBRICA DIVULGANTE');
+    expect(rubrica.areas[0].page).toBe(0); // não era última página, mantém
+    expect(rubrica.areas[1].page).toBe(1); // não era última página, mantém
+  });
+
   it('faz fallback para template base se a criação do template falhar', async () => {
     mockHttpsSequence([
       { statusCode: 500, body: { error: 'server error' } },    // GET /templates/:id falha
