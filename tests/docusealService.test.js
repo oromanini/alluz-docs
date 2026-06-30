@@ -22,6 +22,28 @@ function mockHttpsRequest(statusCode, responseBody) {
   });
 }
 
+// Encadeia múltiplas respostas para sequências de chamadas HTTP
+function mockHttpsSequence(responses) {
+  let index = 0;
+  https.request.mockImplementation((opts, cb) => {
+    const { statusCode, body } = responses[index] || responses[responses.length - 1];
+    index++;
+
+    const resEmitter = new EventEmitter();
+    resEmitter.statusCode = statusCode;
+
+    const reqEmitter = new EventEmitter();
+    reqEmitter.write = jest.fn();
+    reqEmitter.end = jest.fn().mockImplementation(() => {
+      resEmitter.emit('data', JSON.stringify(body));
+      resEmitter.emit('end');
+    });
+
+    cb(resEmitter);
+    return reqEmitter;
+  });
+}
+
 const dadosBase = {
   razao_social: 'Empresa Teste',
   email: 'empresa@teste.com',
@@ -31,11 +53,18 @@ const dadosBase = {
   testemunha2_email: 'test2@email.com',
 };
 
+const submissaoResposta = [
+  { submission_id: 'sub-1', name: 'Empresa Teste', email: 'empresa@teste.com', slug: 'abc' },
+  { submission_id: 'sub-1', name: 'Alluz Tech',    email: 'nda@alluz.tech',   slug: 'def' },
+  { submission_id: 'sub-1', name: 'Testemunha 1',  email: 'test1@email.com',  slug: 'ghi' },
+  { submission_id: 'sub-1', name: 'Testemunha 2',  email: 'test2@email.com',  slug: 'jkl' },
+];
+
 beforeEach(() => {
   process.env.DOCUSEAL_API_KEY = 'fake-key';
 });
 
-describe('criarSubmission', () => {
+describe('criarSubmission — sem pdfBuffer (caminho legado)', () => {
   it('retorna submissionId e signatarios a partir da resposta da API', async () => {
     mockHttpsRequest(200, [
       { submission_id: 'sub-1', name: 'Empresa Teste', email: 'empresa@teste.com', slug: 'abc' },
@@ -57,8 +86,6 @@ describe('criarSubmission', () => {
 
     await criarSubmission(dadosBase);
 
-    const chamada = https.request.mock.calls[0];
-    // O body é enviado via req.write — verificamos via reqEmitter.write
     const bodyStr = https.request.mock.results[0].value.write.mock.calls[0][0];
     const body = JSON.parse(bodyStr);
     expect(body.submitters).toHaveLength(4);
@@ -103,5 +130,88 @@ describe('criarSubmission', () => {
     const result = await criarSubmission(dadosBase);
     expect(result.submissionId).toBeNull();
     expect(result.signatarios).toHaveLength(0);
+  });
+});
+
+describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
+  // PDF mínimo válido para Chromium: contém /Type /Page para contagem de páginas
+  const fakePdf = Buffer.from('%PDF-1.4\n/Type /Page\n%%EOF');
+
+  it('cria template temporário, submission e deleta o template', async () => {
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: [] } },               // GET /templates/:id
+      { statusCode: 200, body: { id: 99999 } },                // POST /templates/pdf
+      { statusCode: 200, body: submissaoResposta },             // POST /submissions
+      { statusCode: 200, body: {} },                           // DELETE /templates/99999
+    ]);
+
+    const result = await criarSubmission(dadosBase, fakePdf);
+
+    expect(result.submissionId).toBe('sub-1');
+    expect(result.signatarios).toHaveLength(4);
+
+    // Verifica que criou a submission com o template temporário (id 99999)
+    const calls = https.request.mock.calls;
+    const submissionCall = calls.find(([opts]) => opts.method === 'POST' && opts.path === '/submissions');
+    expect(submissionCall).toBeDefined();
+    const bodyStr = https.request.mock.results[calls.indexOf(submissionCall)].value.write.mock.calls[0][0];
+    const body = JSON.parse(bodyStr);
+    expect(body.template_id).toBe(99999);
+
+    // Verifica que o template temporário foi deletado
+    const deleteCall = calls.find(([opts]) => opts.method === 'DELETE');
+    expect(deleteCall).toBeDefined();
+    expect(deleteCall[0].path).toContain('99999');
+  });
+
+  it('inclui o PDF em base64 no POST /templates/pdf', async () => {
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: [] } },
+      { statusCode: 200, body: { id: 99999 } },
+      { statusCode: 200, body: submissaoResposta },
+      { statusCode: 200, body: {} },
+    ]);
+
+    await criarSubmission(dadosBase, fakePdf);
+
+    const calls = https.request.mock.calls;
+    const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
+    expect(templateCall).toBeDefined();
+    const idx = calls.indexOf(templateCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const body = JSON.parse(bodyStr);
+    expect(body.documents).toHaveLength(1);
+    expect(body.documents[0].file).toBe(fakePdf.toString('base64'));
+  });
+
+  it('faz fallback para template base se a criação do template falhar', async () => {
+    mockHttpsSequence([
+      { statusCode: 500, body: { error: 'server error' } },    // GET /templates/:id falha
+      { statusCode: 200, body: submissaoResposta },             // POST /submissions com template base
+    ]);
+
+    const result = await criarSubmission(dadosBase, fakePdf);
+
+    expect(result.submissionId).toBe('sub-1');
+    const calls = https.request.mock.calls;
+    const submissionCall = calls.find(([opts]) => opts.method === 'POST' && opts.path === '/submissions');
+    const idx = calls.indexOf(submissionCall);
+    const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
+    const body = JSON.parse(bodyStr);
+    expect(body.template_id).toBe(4380107); // template base
+  });
+
+  it('deleta o template temporário mesmo se a criação da submission falhar', async () => {
+    mockHttpsSequence([
+      { statusCode: 200, body: { fields: [] } },
+      { statusCode: 200, body: { id: 99999 } },
+      { statusCode: 500, body: { error: 'submissions failed' } }, // POST /submissions falha
+      { statusCode: 200, body: {} },                              // DELETE deve ocorrer mesmo assim
+    ]);
+
+    await expect(criarSubmission(dadosBase, fakePdf)).rejects.toThrow('DocuSeal 500');
+
+    const deleteCall = https.request.mock.calls.find(([opts]) => opts.method === 'DELETE');
+    expect(deleteCall).toBeDefined();
   });
 });

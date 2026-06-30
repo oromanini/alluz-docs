@@ -39,21 +39,92 @@ function apiRequest(method, path, body) {
   });
 }
 
-async function criarSubmission(dados) {
+// Busca os campos (fields) do template base para reutilizar as posições de assinatura
+async function buscarCamposTemplate() {
+  const template = await apiRequest('GET', `/templates/${DOCUSEAL_TEMPLATE_ID}`, {});
+  return template.fields || [];
+}
+
+// Conta páginas no PDF gerado pelo Chromium/Puppeteer
+function contarPaginas(pdfBuffer) {
+  const str = pdfBuffer.toString('binary');
+  const matches = str.match(/\/Type\s*\/Page[^s]/g);
+  return matches ? matches.length : 1;
+}
+
+// Cria um template temporário no DocuSeal a partir do PDF preenchido com os dados do cliente
+async function criarTemplatePDF(pdfBuffer, nomeCliente, campos) {
+  const base64 = pdfBuffer.toString('base64');
+  const totalPages = contarPaginas(pdfBuffer);
+
+  // Remapeia campos do template base: ajusta page relativo se veio de template com página diferente
+  const fields = campos.map(f => ({
+    name: f.name,
+    type: f.type,
+    role: f.role,
+    required: f.required !== false,
+    areas: (f.areas || []).map(a => ({
+      ...a,
+      // Se o campo original estava na última página, mantém na última página do novo PDF
+      page: a.page === totalPages ? totalPages : a.page,
+    })),
+  }));
+
+  const payload = {
+    name: `NDA - ${nomeCliente} - ${Date.now()}`,
+    documents: [{ name: 'nda.pdf', file: base64 }],
+    fields,
+  };
+
+  const result = await apiRequest('POST', '/templates/pdf', payload);
+  return result.id;
+}
+
+async function deletarTemplate(templateId) {
+  try {
+    await apiRequest('DELETE', `/templates/${templateId}`, {});
+  } catch (err) {
+    // Falha silenciosa — template temporário, não é crítico
+    console.warn(`Não foi possível deletar o template temporário ${templateId}:`, err.message);
+  }
+}
+
+async function criarSubmission(dados, pdfBuffer) {
   const nomeCliente = dados.razao_social || dados.representante || 'Cliente';
 
-  const submitters = await apiRequest('POST', '/submissions', {
-    template_id: DOCUSEAL_TEMPLATE_ID,
-    send_email: false,
-    submitters: [
-      { role: 'DIVULGANTE',   name: nomeCliente,            email: dados.email },
-      { role: 'RECEPTORA',    name: 'Alluz Tech',           email: 'nda@alluz.tech' },
-      { role: 'TESTEMUNHA 1', name: dados.testemunha1_nome, email: dados.testemunha1_email },
-      { role: 'TESTEMUNHA 2', name: dados.testemunha2_nome, email: dados.testemunha2_email },
-    ],
-  });
+  let templateId = DOCUSEAL_TEMPLATE_ID;
+  let templateTemporario = null;
 
-  // POST /submissions retorna array de submitters, cada um com slug e submission_id
+  if (pdfBuffer) {
+    try {
+      const campos = await buscarCamposTemplate();
+      templateId = await criarTemplatePDF(pdfBuffer, nomeCliente, campos);
+      templateTemporario = templateId;
+    } catch (err) {
+      console.error('Erro ao criar template com PDF preenchido, usando template base:', err.message);
+      // Fallback para o template original em caso de falha
+      templateId = DOCUSEAL_TEMPLATE_ID;
+    }
+  }
+
+  let submitters;
+  try {
+    submitters = await apiRequest('POST', '/submissions', {
+      template_id: templateId,
+      send_email: false,
+      submitters: [
+        { role: 'DIVULGANTE',   name: nomeCliente,            email: dados.email },
+        { role: 'RECEPTORA',    name: 'Alluz Tech',           email: 'nda@alluz.tech' },
+        { role: 'TESTEMUNHA 1', name: dados.testemunha1_nome, email: dados.testemunha1_email },
+        { role: 'TESTEMUNHA 2', name: dados.testemunha2_nome, email: dados.testemunha2_email },
+      ],
+    });
+  } finally {
+    if (templateTemporario) {
+      await deletarTemplate(templateTemporario);
+    }
+  }
+
   const lista = Array.isArray(submitters) ? submitters : [submitters];
 
   return {
