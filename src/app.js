@@ -8,6 +8,7 @@ const authRoutes = require('./routes/auth');
 const clientesRoutes = require('./routes/clientes');
 
 const app = express();
+app.set('trust proxy', 1); // Cloud Run / load balancer
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

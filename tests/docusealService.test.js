@@ -205,7 +205,8 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
     const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
     const idx = calls.indexOf(templateCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
-    const { fields } = JSON.parse(bodyStr);
+    const { documents } = JSON.parse(bodyStr);
+    const fields = documents[0].fields;
 
     expect(fields.find(f => f.name === 'ASSINATURA DIVULGANTE').role).toBe('DIVULGANTE');
     expect(fields.find(f => f.name === 'ASSINATURA RECEPTORA').role).toBe('RECEPTORA');
@@ -231,7 +232,8 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
     const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
     const idx = calls.indexOf(templateCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
-    const { fields } = JSON.parse(bodyStr);
+    const { documents } = JSON.parse(bodyStr);
+    const fields = documents[0].fields;
 
     expect(fields[0].areas[0].attachment_uuid).toBeUndefined();
     expect(fields[0].areas[0].x).toBe(0.1);
@@ -259,7 +261,8 @@ describe('criarSubmission — com pdfBuffer (PDF preenchido)', () => {
     const templateCall = calls.find(([opts]) => opts.path === '/templates/pdf');
     const idx = calls.indexOf(templateCall);
     const bodyStr = https.request.mock.results[idx].value.write.mock.calls[0][0];
-    const { fields } = JSON.parse(bodyStr);
+    const { documents } = JSON.parse(bodyStr);
+    const fields = documents[0].fields;
 
     const assinatura = fields.find(f => f.name === 'ASSINATURA DIVULGANTE');
     expect(assinatura.areas[0].page).toBe(0); // última página do novo PDF
