@@ -71,11 +71,12 @@ async function criarSubmission(dados, pdfBuffer) {
     { role: 'TESTEMUNHA 2', name: dados.testemunha2_nome, email: dados.testemunha2_email },
   ];
 
-  let resposta;
-
   if (pdfBuffer) {
-    // POST /submissions/pdf — cria a submission diretamente do PDF preenchido,
-    // reutilizando as posições de assinatura do template base
+    // POST /submissions/pdf — cria a submission diretamente do PDF preenchido.
+    // Conforme documentação oficial:
+    //   - x/y/w/h: frações normalizadas (0–1)
+    //   - page: 1-indexed (começa em 1)
+    //   - resposta: objeto único { id, submitters: [{email, slug, embed_src, ...}] }
     const campos = await buscarCamposTemplate();
     const ultimaPaginaOriginal = Math.max(...campos.flatMap(f => f.areas?.map(a => a.page) ?? [0]));
     const novaUltimaPagina = ultimaPaginaPDF(pdfBuffer);
@@ -87,29 +88,47 @@ async function criarSubmission(dados, pdfBuffer) {
       required: f.required !== false,
       areas: (f.areas || []).map(({ attachment_uuid, ...a }) => ({
         ...a,
-        page: a.page === ultimaPaginaOriginal ? novaUltimaPagina : a.page,
+        // Template retorna 0-indexed; submissions/pdf exige 1-indexed
+        page: (a.page === ultimaPaginaOriginal ? novaUltimaPagina : a.page) + 1,
       })),
     }));
 
-    resposta = await apiRequest('POST', '/submissions/pdf', {
+    const submission = await apiRequest('POST', '/submissions/pdf', {
       send_email: false,
       documents: [{ name: 'nda.pdf', file: pdfBuffer.toString('base64'), fields }],
       submitters,
     });
-  } else {
-    // Fallback: usa o template estático (sem PDF preenchido)
-    resposta = await apiRequest('POST', '/submissions', {
-      template_id: DOCUSEAL_TEMPLATE_ID,
-      send_email: false,
-      submitters,
-    });
+
+    // A resposta não inclui nomes — cruzamos pelo email com os dados que enviamos
+    const linkPorEmail = Object.fromEntries(
+      (submission.submitters || []).map(s => [
+        s.email,
+        s.embed_src || `https://docuseal.com/s/${s.slug}`,
+      ])
+    );
+
+    return {
+      submissionId: submission.id ?? null,
+      signatarios: submitters.map(s => ({
+        nome:  s.name,
+        email: s.email,
+        link:  linkPorEmail[s.email] ?? null,
+      })),
+    };
   }
 
-  const lista = Array.isArray(resposta) ? resposta : [resposta];
+  // Fallback: usa o template estático (sem PDF preenchido).
+  // Resposta: array de submitters com { submission_id, name, email, slug }
+  const lista = await apiRequest('POST', '/submissions', {
+    template_id: DOCUSEAL_TEMPLATE_ID,
+    send_email: false,
+    submitters,
+  });
 
+  const arr = Array.isArray(lista) ? lista : [lista];
   return {
-    submissionId: lista[0]?.submission_id ?? null,
-    signatarios: lista.map(s => ({
+    submissionId: arr[0]?.submission_id ?? null,
+    signatarios: arr.map(s => ({
       nome:  s.name,
       email: s.email,
       link:  `https://docuseal.com/s/${s.slug}`,
