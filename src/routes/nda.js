@@ -68,7 +68,7 @@ router.post('/gerar-nda', async (req, res) => {
     const pdfBuffer = await gerarPDF(dadosCompletos);
 
     if (process.env.DOCUSEAL_API_KEY) {
-      const { submissionId, signatarios } = await criarSubmission(dadosCompletos);
+      const { submissionId, signatarios } = await criarSubmission(dadosCompletos, pdfBuffer);
       if (submissionId) {
         await pool.query('UPDATE clientes SET docuseal_submission_id = ? WHERE id = ?', [submissionId, result.insertId]);
       }
