@@ -61,85 +61,74 @@ function inferirRole(nomeField) {
   return null;
 }
 
-// Cria um template temporário no DocuSeal a partir do PDF preenchido com os dados do cliente
-async function criarTemplatePDF(pdfBuffer, nomeCliente, campos) {
-  const base64 = pdfBuffer.toString('base64');
-  const novaUltimaPagina = ultimaPaginaPDF(pdfBuffer);
-
-  // Última página do template original (0-indexed): assinaturas ficam sempre na última página
-  const ultimaPaginaOriginal = Math.max(...campos.flatMap(f => f.areas?.map(a => a.page) ?? [0]));
-
-  const fields = campos.map(f => ({
-    name: f.name,
-    type: f.type,
-    role: inferirRole(f.name),
-    required: f.required !== false,
-    areas: (f.areas || []).map(({ attachment_uuid, ...a }) => ({
-      ...a,
-      // Se o campo estava na última página do template original, mapeia para a última do novo PDF
-      page: a.page === ultimaPaginaOriginal ? novaUltimaPagina : a.page,
-    })),
-  }));
-
-  const payload = {
-    name: `NDA - ${nomeCliente} - ${Date.now()}`,
-    documents: [{ name: 'nda.pdf', file: base64, fields }],
-  };
-
-  const result = await apiRequest('POST', '/templates/pdf', payload);
-  return result.id;
-}
-
-async function deletarTemplate(templateId) {
-  try {
-    await apiRequest('DELETE', `/templates/${templateId}`, {});
-  } catch (err) {
-    // Falha silenciosa — template temporário, não é crítico
-    console.warn(`Não foi possível deletar o template temporário ${templateId}:`, err.message);
-  }
-}
-
 async function criarSubmission(dados, pdfBuffer) {
   const nomeCliente = dados.razao_social || dados.representante || 'Cliente';
 
-  let templateId = DOCUSEAL_TEMPLATE_ID;
-  let templateTemporario = null;
+  const submitters = [
+    { role: 'DIVULGANTE',   name: nomeCliente,            email: dados.email },
+    { role: 'RECEPTORA',    name: 'Alluz Tech',           email: 'nda@alluz.tech' },
+    { role: 'TESTEMUNHA 1', name: dados.testemunha1_nome, email: dados.testemunha1_email },
+    { role: 'TESTEMUNHA 2', name: dados.testemunha2_nome, email: dados.testemunha2_email },
+  ];
 
   if (pdfBuffer) {
-    try {
-      const campos = await buscarCamposTemplate();
-      templateId = await criarTemplatePDF(pdfBuffer, nomeCliente, campos);
-      templateTemporario = templateId;
-    } catch (err) {
-      console.error('Erro ao criar template com PDF preenchido, usando template base:', err.message);
-      // Fallback para o template original em caso de falha
-      templateId = DOCUSEAL_TEMPLATE_ID;
-    }
-  }
+    // POST /submissions/pdf — cria a submission diretamente do PDF preenchido.
+    // Conforme documentação oficial:
+    //   - x/y/w/h: frações normalizadas (0–1)
+    //   - page: 1-indexed (começa em 1)
+    //   - resposta: objeto único { id, submitters: [{email, slug, embed_src, ...}] }
+    const campos = await buscarCamposTemplate();
+    const ultimaPaginaOriginal = Math.max(...campos.flatMap(f => f.areas?.map(a => a.page) ?? [0]));
+    const novaUltimaPagina = ultimaPaginaPDF(pdfBuffer);
 
-  let submitters;
-  try {
-    submitters = await apiRequest('POST', '/submissions', {
-      template_id: templateId,
+    const fields = campos.map(f => ({
+      name: f.name,
+      type: f.type,
+      role: inferirRole(f.name),
+      required: f.required !== false,
+      areas: (f.areas || []).map(({ attachment_uuid, ...a }) => ({
+        ...a,
+        // Template retorna 0-indexed; submissions/pdf exige 1-indexed
+        page: (a.page === ultimaPaginaOriginal ? novaUltimaPagina : a.page) + 1,
+      })),
+    }));
+
+    const submission = await apiRequest('POST', '/submissions/pdf', {
       send_email: false,
-      submitters: [
-        { role: 'DIVULGANTE',   name: nomeCliente,            email: dados.email },
-        { role: 'RECEPTORA',    name: 'Alluz Tech',           email: 'nda@alluz.tech' },
-        { role: 'TESTEMUNHA 1', name: dados.testemunha1_nome, email: dados.testemunha1_email },
-        { role: 'TESTEMUNHA 2', name: dados.testemunha2_nome, email: dados.testemunha2_email },
-      ],
+      documents: [{ name: 'nda.pdf', file: pdfBuffer.toString('base64'), fields }],
+      submitters,
     });
-  } finally {
-    if (templateTemporario) {
-      await deletarTemplate(templateTemporario);
-    }
+
+    // A resposta não inclui nomes — cruzamos pelo email com os dados que enviamos
+    const linkPorEmail = Object.fromEntries(
+      (submission.submitters || []).map(s => [
+        s.email,
+        s.embed_src || `https://docuseal.com/s/${s.slug}`,
+      ])
+    );
+
+    return {
+      submissionId: submission.id ?? null,
+      signatarios: submitters.map(s => ({
+        nome:  s.name,
+        email: s.email,
+        link:  linkPorEmail[s.email] ?? null,
+      })),
+    };
   }
 
-  const lista = Array.isArray(submitters) ? submitters : [submitters];
+  // Fallback: usa o template estático (sem PDF preenchido).
+  // Resposta: array de submitters com { submission_id, name, email, slug }
+  const lista = await apiRequest('POST', '/submissions', {
+    template_id: DOCUSEAL_TEMPLATE_ID,
+    send_email: false,
+    submitters,
+  });
 
+  const arr = Array.isArray(lista) ? lista : [lista];
   return {
-    submissionId: lista[0]?.submission_id ?? null,
-    signatarios: lista.map(s => ({
+    submissionId: arr[0]?.submission_id ?? null,
+    signatarios: arr.map(s => ({
       nome:  s.name,
       email: s.email,
       link:  `https://docuseal.com/s/${s.slug}`,
